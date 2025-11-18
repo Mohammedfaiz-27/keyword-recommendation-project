@@ -1,0 +1,12 @@
+.env
+nul
+.env
+venv/
+*.env
+venv/
+.env
+__pycache__/
+*.pyc
+node_modules/
+.env
+.env.local

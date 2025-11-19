@@ -180,7 +180,10 @@ class KeywordExtractor:
         keywords = []
         entity_texts = {ent.text.lower() for ent in doc.ents}
 
-        for keyword, score in keyword_scores.most_common(max_keywords * 2):
+        # No limit - get all keywords (or use max_keywords if specified and less than 100)
+        limit = max_keywords if max_keywords and max_keywords < 100 else None
+
+        for keyword, score in keyword_scores.most_common(limit):
             # Normalize score to 0-1
             normalized_score = round(score / max_score, 2)
 
@@ -198,9 +201,9 @@ class KeywordExtractor:
                 type=keyword_type
             ))
 
-        # Sort by score and return top N
+        # Sort by score and return all keywords (no limit)
         keywords.sort(key=lambda x: x.score, reverse=True)
-        return keywords[:max_keywords]
+        return keywords
 
     def is_loaded(self) -> bool:
         """Check if NLP model is loaded."""

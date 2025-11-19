@@ -1,7 +1,7 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1';
 
 /**
- * Extract content and keywords from a PDF file
+ * Extract content and keywords from a PDF file (old method - extracts from PDF text only)
  */
 export const extractFromPDF = async (file, maxKeywords = 10) => {
   const formData = new FormData();
@@ -17,6 +17,42 @@ export const extractFromPDF = async (file, maxKeywords = 10) => {
 
   if (!response.ok) {
     throw new Error(data.detail || 'Failed to extract from PDF');
+  }
+
+  return data;
+};
+
+/**
+ * Extract links from PDF, scrape webpages, and get keywords from scraped content
+ * This is the NEW method that actually visits URLs and scrapes webpage content
+ */
+export const extractPDFLinks = async (file, options = {}) => {
+  const {
+    maxKeywordsPerLink = 15,
+    maxNewsPerLink = 10,
+    minRelevanceScore = 0.3,
+    crawlTimeout = 15
+  } = options;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const params = new URLSearchParams({
+    max_keywords_per_link: maxKeywordsPerLink.toString(),
+    max_news_per_link: maxNewsPerLink.toString(),
+    min_relevance_score: minRelevanceScore.toString(),
+    crawl_timeout: crawlTimeout.toString()
+  });
+
+  const response = await fetch(`${API_BASE_URL}/extract/pdf-links?${params}`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || 'Failed to extract links from PDF');
   }
 
   return data;

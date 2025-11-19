@@ -240,15 +240,14 @@ class Recommender:
         """Search posts_table collection."""
         collection = self.db["posts_table"]
 
-        # Build regex patterns for case-insensitive search
-        regex_patterns = [{"$regex": kw, "$options": "i"} for kw in keywords]
-
         try:
+            # Use proper regex pattern - join keywords with OR
+            pattern = "|".join([kw.replace(".", r"\.") for kw in keywords])
+
             cursor = collection.find({
                 "$or": [
-                    {"post_text": {"$in": regex_patterns}},
-                    {"key_narratives": {"$in": regex_patterns}},
-                    {"post_text": {"$regex": "|".join(keywords), "$options": "i"}},
+                    {"post_text": {"$regex": pattern, "$options": "i"}},
+                    {"key_narratives": {"$regex": pattern, "$options": "i"}},
                 ]
             }).limit(50)
 

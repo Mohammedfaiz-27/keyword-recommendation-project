@@ -2,29 +2,117 @@ import React, { useState } from 'react';
 import Header from './components/Header';
 import InputSection from './components/InputSection';
 import ResultsSection from './components/ResultsSection';
-import { extractFromPDF, extractFromURL } from './services/api';
+import { extractFromPDF, extractFromURL, extractPDFLinks } from './services/api';
 
 function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [processingTime, setProcessingTime] = useState(null);
+  const [linkResults, setLinkResults] = useState(null); // For PDF link extraction results
 
   const handleExtract = async (inputType, data, maxKeywords) => {
     setLoading(true);
     setError(null);
     setResult(null);
+    setLinkResults(null);
 
     try {
       let response;
       if (inputType === 'url') {
         response = await extractFromURL(data, maxKeywords);
+        setResult(response.data);
+        setProcessingTime(response.processing_time_ms);
       } else {
-        response = await extractFromPDF(data, maxKeywords);
-      }
+        // Use the NEW pdf-links endpoint that scrapes webpages
+        response = await extractPDFLinks(data, {
+          maxKeywordsPerLink: maxKeywords,
+          maxNewsPerLink: 10,
+          minRelevanceScore: 0.3,
+          crawlTimeout: 15
+        });
 
-      setResult(response.data);
-      setProcessingTime(response.processing_time_ms);
+        // Store the link extraction results
+        setLinkResults(response);
+        setProcessingTime(response.processing_time_ms);
+
+        // Also create a compatible result format for existing ResultsSection
+        if (response.results && response.results.length > 0) {
+          // Combine all keywords, entities, and recommendations from all scraped pages
+          const allKeywords = [];
+          const allRecommendations = [];
+          const allEntities = {
+            persons: [],
+            locations: [],
+            organizations: [],
+            dates: [],
+            misc: []
+          };
+
+          response.results.forEach((linkResult, linkIndex) => {
+            if (linkResult.crawl_success) {
+              linkResult.keywords.forEach(kw => {
+                allKeywords.push({
+                  keyword: kw.keyword,
+                  score: kw.score,
+                  type: kw.type
+                });
+              });
+
+              // Aggregate entities from each page
+              if (linkResult.entities) {
+                if (linkResult.entities.persons) {
+                  allEntities.persons.push(...linkResult.entities.persons);
+                }
+                if (linkResult.entities.locations) {
+                  allEntities.locations.push(...linkResult.entities.locations);
+                }
+                if (linkResult.entities.organizations) {
+                  allEntities.organizations.push(...linkResult.entities.organizations);
+                }
+                if (linkResult.entities.dates) {
+                  allEntities.dates.push(...linkResult.entities.dates);
+                }
+                if (linkResult.entities.misc) {
+                  allEntities.misc.push(...linkResult.entities.misc);
+                }
+              }
+
+              linkResult.related_news.forEach((news, newsIndex) => {
+                // Map the field names to match what RecommendationsList expects
+                allRecommendations.push({
+                  id: `${linkIndex}-${newsIndex}`,
+                  title: news.title || `Article from ${news.source}`,
+                  summary: news.content_preview || 'No summary available',
+                  relevance_score: news.relevance_score,
+                  matched_keywords: news.matched_keywords || [],
+                  published_date: news.published_at,
+                  url: news.url,
+                  source: news.source
+                });
+              });
+            }
+          });
+
+          // Remove duplicates from entities
+          const uniqueEntities = {
+            persons: [...new Set(allEntities.persons)],
+            locations: [...new Set(allEntities.locations)],
+            organizations: [...new Set(allEntities.organizations)],
+            dates: [...new Set(allEntities.dates)],
+            misc: [...new Set(allEntities.misc)]
+          };
+
+          // Create result in the format expected by ResultsSection
+          setResult({
+            content: response.results.map(r => r.scraped_content_preview).join('\n\n'),
+            word_count: response.results.reduce((sum, r) => sum + r.word_count, 0),
+            keywords: allKeywords,
+            entities: uniqueEntities,
+            recommendations: allRecommendations
+          });
+        }
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -36,6 +124,7 @@ function App() {
     setResult(null);
     setError(null);
     setProcessingTime(null);
+    setLinkResults(null);
   };
 
   return (

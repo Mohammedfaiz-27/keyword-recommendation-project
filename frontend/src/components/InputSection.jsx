@@ -1,19 +1,22 @@
 import React, { useState, useRef } from 'react';
 
 function InputSection({ onExtract, loading, onClear, hasResult }) {
-  const [inputType, setInputType] = useState('url');
-  const [url, setUrl] = useState('');
+  // Default to PDF since URL is commented out
+  const [inputType, setInputType] = useState('pdf');
+  // const [url, setUrl] = useState('');
   const [file, setFile] = useState(null);
-  const [maxKeywords, setMaxKeywords] = useState(10);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (inputType === 'url' && url) {
-      onExtract('url', url, maxKeywords);
-    } else if (inputType === 'pdf' && file) {
-      onExtract('pdf', file, maxKeywords);
+    // URL feature commented out
+    // if (inputType === 'url' && url) {
+    //   onExtract('url', url);
+    // } else
+    if (inputType === 'pdf' && file) {
+      // No keyword limit - pass a large number or null
+      onExtract('pdf', file, 100);
     }
   };
 
@@ -49,7 +52,7 @@ function InputSection({ onExtract, loading, onClear, hasResult }) {
   };
 
   const handleClearInput = () => {
-    setUrl('');
+    // setUrl('');
     setFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -62,11 +65,12 @@ function InputSection({ onExtract, loading, onClear, hasResult }) {
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-2">Extract Keywords</h2>
         <p className="text-sm text-gray-500">
-          Upload a PDF or enter a URL to extract keywords and find related news articles
+          Upload a PDF to extract keywords and find related news articles
         </p>
       </div>
 
-      {/* Input Type Toggle */}
+      {/* Input Type Toggle - URL commented out */}
+      {/*
       <div className="flex space-x-2 mb-6">
         <button
           type="button"
@@ -101,9 +105,11 @@ function InputSection({ onExtract, loading, onClear, hasResult }) {
           </span>
         </button>
       </div>
+      */}
 
       <form onSubmit={handleSubmit}>
-        {/* URL Input */}
+        {/* URL Input - Commented out */}
+        {/*
         {inputType === 'url' && (
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -119,98 +125,81 @@ function InputSection({ onExtract, loading, onClear, hasResult }) {
             />
           </div>
         )}
+        */}
 
         {/* PDF Input */}
-        {inputType === 'pdf' && (
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              PDF Document
-            </label>
-            <div
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                dragActive
-                  ? 'border-blue-500 bg-blue-50'
-                  : file
-                  ? 'border-green-500 bg-green-50'
-                  : 'border-gray-300 hover:border-gray-400'
-              }`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf"
-                onChange={handleFileChange}
-                className="hidden"
-                id="pdf-upload"
-              />
-
-              {file ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">{file.name}</p>
-                    <p className="text-sm text-gray-500">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFile(null);
-                      if (fileInputRef.current) fileInputRef.current.value = '';
-                    }}
-                    className="ml-2 text-gray-400 hover:text-red-500"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              ) : (
-                <label htmlFor="pdf-upload" className="cursor-pointer">
-                  <svg className="w-10 h-10 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  <p className="text-sm text-gray-600">
-                    <span className="text-blue-500 font-medium">Click to upload</span> or drag and drop
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">PDF files only</p>
-                </label>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Max Keywords Slider */}
-        <div className="mb-6">
+        <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Maximum Keywords: <span className="text-blue-500">{maxKeywords}</span>
+            PDF Document
           </label>
-          <input
-            type="range"
-            min="5"
-            max="30"
-            value={maxKeywords}
-            onChange={(e) => setMaxKeywords(parseInt(e.target.value))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-          />
-          <div className="flex justify-between text-xs text-gray-400 mt-1">
-            <span>5</span>
-            <span>30</span>
+          <div
+            className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+              dragActive
+                ? 'border-blue-500 bg-blue-50'
+                : file
+                ? 'border-green-500 bg-green-50'
+                : 'border-gray-300 hover:border-gray-400'
+            }`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf"
+              onChange={handleFileChange}
+              className="hidden"
+              id="pdf-upload"
+            />
+
+            {file ? (
+              <div className="flex items-center justify-center space-x-2">
+                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-left">
+                  <p className="font-medium text-gray-900">{file.name}</p>
+                  <p className="text-sm text-gray-500">
+                    {(file.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFile(null);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                  className="ml-2 text-gray-400 hover:text-red-500"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <label htmlFor="pdf-upload" className="cursor-pointer">
+                <svg className="w-10 h-10 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p className="text-sm text-gray-600">
+                  <span className="text-blue-500 font-medium">Click to upload</span> or drag and drop
+                </p>
+                <p className="text-xs text-gray-400 mt-1">PDF files only</p>
+              </label>
+            )}
           </div>
         </div>
+
+        {/* Max Keywords Slider - Removed */}
+        {/* No limit on keywords - all keywords will be extracted */}
 
         {/* Action Buttons */}
         <div className="flex space-x-3">
           <button
             type="submit"
-            disabled={loading || (inputType === 'url' ? !url : !file)}
+            disabled={loading || !file}
             className="flex-1 bg-blue-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
           >
             {loading ? (
